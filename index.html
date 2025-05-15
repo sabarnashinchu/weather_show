@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Show</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 2rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #0083b0;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #0083b0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #006687;
+        }
+
+        .weather-info {
+            display: none;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        .weather-info.active {
+            display: block;
+        }
+
+        .weather-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .weather-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .value {
+            color: #333;
+            font-weight: 400;
+        }
+
+        .city-name {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Show</h1>
+        <div class="search-box">
+            <input type="text" id="cityInput" placeholder="Enter city name">
+            <button onclick="getWeather()">Search</button>
+        </div>
+        <div id="error" class="error"></div>
+        <div id="weatherInfo" class="weather-info">
+            <div class="city-name" id="cityName"></div>
+            <div class="weather-row">
+                <span class="label">Temperature</span>
+                <span class="value" id="temp"></span>
+            </div>
+            <div class="weather-row">
+                <span class="label">Feels Like</span>
+                <span class="value" id="feelsLike"></span>
+            </div>
+            <div class="weather-row">
+                <span class="label">Conditions</span>
+                <span class="value" id="conditions"></span>
+            </div>
+            <div class="weather-row">
+                <span class="label">Humidity</span>
+                <span class="value" id="humidity"></span>
+            </div>
+            <div class="weather-row">
+                <span class="label">Wind Speed</span>
+                <span class="value" id="windSpeed"></span>
+            </div>
+            <div class="weather-row">
+                <span class="label">Sunrise</span>
+                <span class="value" id="sunrise"></span>
+            </div>
+            <div class="weather-row">
+                <span class="label">Sunset</span>
+                <span class="value" id="sunset"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getWeather() {
+            const cityInput = document.getElementById('cityInput');
+            const city = cityInput.value.trim();
+            
+            if (!city) {
+                showError('Please enter a city name');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('city', city);
+
+            fetch('/get_weather', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+                updateWeatherDisplay(data);
+            })
+            .catch(error => {
+                showError('Failed to fetch weather data');
+                console.error('Error:', error);
+            });
+        }
+
+        function updateWeatherDisplay(data) {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('weatherInfo').classList.add('active');
+            
+            document.getElementById('cityName').textContent = data.city;
+            document.getElementById('temp').textContent = `${data.temp}°C`;
+            document.getElementById('feelsLike').textContent = `${data.feels_like}°C`;
+            document.getElementById('conditions').textContent = data.description;
+            document.getElementById('humidity').textContent = `${data.humidity}%`;
+            document.getElementById('windSpeed').textContent = `${data.wind_speed} m/s`;
+            document.getElementById('sunrise').textContent = 
+                `${String(data.sunrise).padStart(2, '0')}:${String(data.sunrise_mins).padStart(2, '0')}`;
+            document.getElementById('sunset').textContent = 
+                `${String(data.sunset).padStart(2, '0')}:${String(data.sunset_mins).padStart(2, '0')}`;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('weatherInfo').classList.remove('active');
+        }
+
+        // Allow Enter key to trigger search
+        document.getElementById('cityInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getWeather();
+            }
+        });
+    </script>
+</body>
+</html> 
